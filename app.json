@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Affirmations for Self-Acceptance",
+    "slug": "affirmations-for-self-acceptance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFF5F5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.affirmations.selfacceptance"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF5F5"
+      },
+      "package": "com.affirmations.selfacceptance"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
