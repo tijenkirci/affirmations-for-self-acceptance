@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import AffirmationCard from '../components/AffirmationCard';
 import ActionButton from '../components/ActionButton';
 import CategoryButton from '../components/CategoryButton';
+import { useSubscription } from '../context/SubscriptionContext';
 import {
   AFFIRMATIONS,
   CATEGORY_LABELS,
@@ -12,16 +14,28 @@ import {
 import { getRandomFromCategory } from '../utils/helpers';
 import { COLORS, FONTS } from '../utils/theme';
 
+// Free users can access the first 2 categories
+const FREE_CATEGORIES = ['confidence', 'self-love'];
+
 export default function CategoriesScreen() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [affirmation, setAffirmation] = useState(null);
+  const navigation = useNavigation();
+  const { isPremium } = useSubscription();
 
   const categoryKeys = Object.keys(AFFIRMATIONS);
 
-  const handleCategoryPress = useCallback((key) => {
-    setSelectedCategory(key);
-    setAffirmation(getRandomFromCategory(AFFIRMATIONS[key], null));
-  }, []);
+  const handleCategoryPress = useCallback(
+    (key) => {
+      if (!isPremium && !FREE_CATEGORIES.includes(key)) {
+        navigation.navigate('Paywall');
+        return;
+      }
+      setSelectedCategory(key);
+      setAffirmation(getRandomFromCategory(AFFIRMATIONS[key], null));
+    },
+    [isPremium, navigation]
+  );
 
   const handleNext = useCallback(() => {
     if (selectedCategory) {
@@ -44,16 +58,30 @@ export default function CategoriesScreen() {
       </View>
 
       <View style={styles.categoryList}>
-        {categoryKeys.map((key) => (
-          <CategoryButton
-            key={key}
-            label={CATEGORY_LABELS[key]}
-            icon={CATEGORY_ICONS[key]}
-            color={COLORS.categoryColors[key]}
-            onPress={() => handleCategoryPress(key)}
-          />
-        ))}
+        {categoryKeys.map((key) => {
+          const isLocked = !isPremium && !FREE_CATEGORIES.includes(key);
+          return (
+            <View key={key} style={{ opacity: isLocked ? 0.6 : 1 }}>
+              <CategoryButton
+                label={
+                  isLocked
+                    ? `${CATEGORY_LABELS[key]}  🔒`
+                    : CATEGORY_LABELS[key]
+                }
+                icon={CATEGORY_ICONS[key]}
+                color={COLORS.categoryColors[key]}
+                onPress={() => handleCategoryPress(key)}
+              />
+            </View>
+          );
+        })}
       </View>
+
+      {!isPremium && (
+        <Text style={styles.lockHint}>
+          Unlock all categories with a one-time purchase
+        </Text>
+      )}
 
       {selectedCategory && affirmation && (
         <View style={styles.resultSection}>
@@ -100,6 +128,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   categoryList: {
+    marginBottom: 10,
+  },
+  lockHint: {
+    textAlign: 'center',
+    color: COLORS.textLight,
+    fontSize: 13,
+    fontStyle: 'italic',
     marginBottom: 10,
   },
   resultSection: {

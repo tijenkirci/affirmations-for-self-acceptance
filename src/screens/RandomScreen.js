@@ -1,17 +1,34 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import AffirmationCard from '../components/AffirmationCard';
 import ActionButton from '../components/ActionButton';
+import { useSubscription } from '../context/SubscriptionContext';
 import { getRandomAffirmation } from '../utils/helpers';
 import { COLORS, FONTS } from '../utils/theme';
 
 export default function RandomScreen() {
   const [affirmation, setAffirmation] = useState(null);
+  const navigation = useNavigation();
+  const {
+    isPremium,
+    canUseRandom,
+    freeRandomsRemaining,
+    freeRandomLimit,
+    incrementFreeRandoms,
+  } = useSubscription();
 
-  const handleInspire = useCallback(() => {
+  const handleInspire = useCallback(async () => {
+    if (!canUseRandom) {
+      navigation.navigate('Paywall');
+      return;
+    }
     setAffirmation((prev) => getRandomAffirmation(prev));
-  }, []);
+    if (!isPremium) {
+      await incrementFreeRandoms();
+    }
+  }, [canUseRandom, isPremium, incrementFreeRandoms, navigation]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -39,6 +56,14 @@ export default function RandomScreen() {
       <View style={styles.buttonContainer}>
         <ActionButton title="Inspire Me" onPress={handleInspire} />
       </View>
+
+      {!isPremium && (
+        <Text style={styles.limitText}>
+          {canUseRandom
+            ? `${freeRandomsRemaining} of ${freeRandomLimit} free inspirations remaining today`
+            : "You've used today's free inspirations"}
+        </Text>
+      )}
     </ScrollView>
   );
 }
@@ -83,5 +108,12 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 24,
     alignItems: 'center',
+  },
+  limitText: {
+    textAlign: 'center',
+    color: COLORS.textLight,
+    fontSize: 13,
+    marginTop: 16,
+    fontStyle: 'italic',
   },
 });
